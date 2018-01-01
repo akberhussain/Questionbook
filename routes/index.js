@@ -2,8 +2,8 @@ var express = require("express");
 var router  = express.Router();
 var passport = require("passport");
 var User = require("../models/user");
-var Question = require("../models/question");
-var Key = require("../models/key");
+var Question = require("../models/question").Question;
+var Key = require("../models/question").Key;
 var middleware = require("../middleware/index");
 
 
@@ -14,17 +14,44 @@ var middleware = require("../middleware/index");
 
 router.get("/",function(req, res){
 
-   Question.find({}).populate("key").exec(function(err, questions){
+   Question.find({}, function(err, questions){
+        // Key.find({}, function(err, keys){
+        //     if(err){
+        //         console.log(err);
+        //         res.redirect("back");
+        //     } else{
+        //         res.render("index", {keys: keys, questions: questions});    
+        //     }
+        // });
+        if(err){
+            console.log(err);
+            res.redirect("back");
+        } else{
+                res.render("index", {questions: questions});    
+            }
+   });
+
+});
+
+router.get("/showdetails:id", function(req, res){
+    Question.findById(req.params.id, function(err, question){
         if(err){
             console.log(err);
         } else{
-            res.render("index", {questions: questions}); 
+            Key.find({}, function(err, keys){
+                if(err){
+                    console.log(err);
+                } else{
+                    // console.log(quest)
+                   
+                    res.render("show", {question: question, keys: keys});
+                }
+            });
         }
-   }) 
+    });
 });
 
-
-// Ask Question
+//=========================== Ask Question ============================
 router.get("/home/new", middleware.isLoggedIn, function(req, res) {
     res.render("new");
 });
@@ -32,7 +59,7 @@ router.get("/home/new", middleware.isLoggedIn, function(req, res) {
 router.post("/askquestion", middleware.isLoggedIn, function(req, res){
     var question = req.body.question;
     var author = {
-        id: req.user.id,
+        authorid: req.user.id,
         username: req.user.username
     };
     var obj = {question: question, author: author};
@@ -47,61 +74,106 @@ router.post("/askquestion", middleware.isLoggedIn, function(req, res){
     });
 });
 
-router.get("/addkeyto/:id", function(req, res){
+// ==========================================================================
+
+
+//  ======================= ADD KEY =========================================
+
+router.get("/addkeyto/:id", middleware.isLoggedIn , function(req, res){
     Question.findById(req.params.id, function(err, question){
         res.render("addkey", {question: question});
     });
 });
 
-router.post("/addkeyto/:id", function(req, res){
-    var obj = {key: req.body.key};
+
+router.post("/addkeyto/:id", middleware.isLoggedIn , function(req, res){
+    var obj = {text: req.body.key};
 
     Question.findById(req.params.id, function(err, question){
         if(err){
             console.log(err);
+            res.redirect("back");
         } else{
-            Key.create(obj, function(err, key){
+            if(req.body.key===''){
+                req.flash("error", "key can not be empty !!!")
+                res.redirect("back");                
+            } else{
+             Key.create(obj, function(err, key){
                 if(err){
                     console.log(err);
+                    res.redirect("back");
                 } else{
                     question.key.push(key);
                     key.save();
                     question.save();
-                    res.redirect("/");
+                    req.flash("success", "Your key is added and available for people to vote !!");
+                    res.redirect("/showdetails"+req.params.id);
                 }
             })
+            }
+           
         }
     });
 });
 
-            //  Finding Questions
+// ========================/ADD KEY===================================
 
-// router.post("/results", function(req, res) {
-//     var search = req.body.search;
 
-//     User.find({name : name},function(err, foundResult){
-//         if(err){
-//             console.log("Error");
-//         }
-//         else{
-//                     // Ref = 1 for campgrounds.ejs
-//             // res.render("places/places", {places:foundResult, url : "/restaurants", name : "Results"});
-//             res.render("places/users", {users: foundResult, url: "/user", name: "Users"});                      
-//         }
-//     });
+router.post("/anything:id",middleware.isLoggedIn, function(req, res){
     
-// });
-            //  Showing found Questions
+    Question.findById(req.params.id, function(err, question){
+        if(err){
+            console.log(err);
+            res.redirect("back");
+        } else{
 
-// router.get("/user/:id", function(req, res){
-//     User.findById(req.params.id, function(err, foundUser){
-//         if(err){
-//             console.log(err);
-//         } else{
-//             res.render("places/foundUser", {foundUser: foundUser});
-//         }
-//     });
-// });
+            var value = req.body.selected;
+            console.log(value);
+            if(value==undefined){
+                res.redirect('back');
+            } else{
+                question.key.forEach(function(key){
+                    if(key.text===value){
+                        key.count+=1;
+                        key.save();
+                        question.save();
+                    }
+                })
+                Key.findOne({text: value}, function(err, key){
+                    if(err){
+                        console.log(err);
+                        res.redirect("back");
+                    } else{
+                        key.count+=1;
+                        key.save();                    
+                    }
+                })
+                req.flash("success", "Thanks for Your Vote We have added your review ");
+                res.redirect("/");
+            }
+
+
+
+        }
+    })
+});
+
+// ==================DELETE QUESTION================================
+
+router.delete("/removequestion:id", function(req, res){
+    Question.findByIdAndRemove(req.params.id, function(err, question){
+        if(err){
+            console.log(err);
+            res.redirect("back");
+        } else{
+            req.flash("success", "Sucessfully deleted a question ");
+            res.redirect("back");
+        }
+    }); 
+})
+
+
+
 
 // =========================
 //  Authentication Routes

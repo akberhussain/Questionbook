@@ -1,16 +1,23 @@
 var mongoose = require("mongoose");
-var passportLocalMongoose = require("passport-local-mongoose");
+
+var keySchema = new mongoose.Schema({
+    text: String,
+    count: {
+        type: Number,
+        default: 0
+    }
+});
+
+
+
+var Key =  mongoose.model("Key", keySchema);
+
 
 var questionSchema = new mongoose.Schema({
     question: String,
-    key: [
-	        {
-	            type: mongoose.Schema.Types.ObjectId,
-	            ref : "Key"
-	        }
-    ],
+    key: [keySchema],
     author:{
-        id:{
+        authorid:{
           type: mongoose.Schema.Types.ObjectId,
           ref : "User"
         },
@@ -19,5 +26,9 @@ var questionSchema = new mongoose.Schema({
 
 });
 
-questionSchema.plugin(passportLocalMongoose);
-module.exports = mongoose.model("Question", questionSchema);
+
+var Question = mongoose.model("Question", questionSchema);
+module.exports = {
+    Question : Question,
+    Key: Key
+} 

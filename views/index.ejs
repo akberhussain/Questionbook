@@ -15,13 +15,20 @@
                      <div class = "jumbotron">
                         <div class = "text-left">
                             <h4><%= question.author.username %></h4>
-                            <p style = "font-size: 15px"><%= question.question%></p>
-                            <span class = "text-right"><a href = "/addkeyto/<%= question._id %>" class = "btn btn-primary">Add Your key</a></span>
-                            <% question.key.forEach(function(keys){ %>
-
-                                <p><%= keys %></p>
-
+                            <p style = "font-size: 15px"><strong> asked:  </strong><%= question.question%></p>
+                            <br />
+                            <% question.key.forEach(function(key){ %>
+                                <p class = "text-center" style = "font-size: 20px;"><%= key.count %> people voted for <%= key.text %></p>
                             <% }) %>
+                            <span class = "text-right"><a href = "/showdetails<%= question._id %>" class = "btn btn-primary">Show Details/ Add Your Vote</a></span>
+                            <br />
+                            <br />
+                    <% if(currentUser && question.author.authorid.equals(currentUser._id)){ %>
+                            <form action = "/removequestion<%= question._id %>?_method=delete" method="post">
+                                <input type="submit" value = "Delete this Question" class = "btn btn-danger"/>
+                            </form>
+                    <% } %>
+<!--                             <span class = "text-right"><a href = "" ></a></span> -->                             
                             <p></p>
                         </div>
                     </div>
@@ -32,3 +39,4 @@
 </div>        
 
 <% include ./partials/footer %>
+

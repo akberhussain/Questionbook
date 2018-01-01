@@ -1,9 +1,9 @@
-var mongoose = require("mongoose");
+// var mongoose = require("mongoose");
     
-var keySchema = new mongoose.Schema({
-    text: String,
-});
+// var keySchema = new mongoose.Schema({
+//     text: String,
+// });
 
 
 
-module.exports =  mongoose.model("Key", keySchema);
+// module.exports =  mongoose.model("Key", keySchema);
